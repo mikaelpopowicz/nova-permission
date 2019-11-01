@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class AddAuthorizableToPermissionTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        $tableNames = config('permission.table_names');
+
+        Schema::table($tableNames['permissions'], function (Blueprint $table) {
+            $table->unsignedBigInteger('authorizable_id')->nullable()->after('guard_name');
+            $table->string('authorizable_type')->nullable()->after('authorizable_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        $tableNames = config('permission.table_names');
+
+        Schema::table($tableNames['permissions'], function (Blueprint $table) {
+            $table->dropColumn(['authorizable_id', 'authorizable_type']);
+        });
+    }
+}
