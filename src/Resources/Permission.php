@@ -4,48 +4,29 @@ namespace Mikaelpopowicz\NovaPermission\Resources;
 
 use Laravel\Nova\Nova;
 use Laravel\Nova\Resource;
+use Illuminate\Support\Str;
 use Laravel\Nova\Fields\ID;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Text;
+use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\Select;
+use Laravel\Nova\Fields\MorphTo;
 use Laravel\Nova\Fields\DateTime;
-use Laravel\Nova\Fields\MorphToMany;
 use Laravel\Nova\Fields\BelongsToMany;
-use Spatie\Permission\PermissionRegistrar;
-use Mikaelpopowicz\NovaPermission\Models\Permission as PermissionModel;
-use Mikaelpopowicz\NovaPermission\Contracts\HasAuthorizable as HasAuthorizableContract;
+use Mikaelpopowicz\NovaPermission\Traits\HasFieldName;
 
 class Permission extends Resource
 {
+    use HasFieldName;
+
+    public static $dateDisplayCallback = null;
+
     /**
      * The model the resource corresponds to.
      *
      * @var string
      */
-    public static $model = PermissionModel::class;
-
-    /** @var \Spatie\Permission\PermissionRegistrar */
-    protected $registrar;
-
-    /**
-     * Permission constructor.
-     *
-     * @param $resource
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
-     */
-    public function __construct($resource, PermissionRegistrar $registrar)
-    {
-        parent::__construct($resource);
-
-        $this->registrar = $registrar;
-        $permissionClass = $this->registrar->getPermissionClass();
-
-        static::$model = get_class($permissionClass);
-
-        if ($permissionClass instanceof HasAuthorizableContract) {
-            static::$with = ['authorizable'];
-        }
-    }
+    public static $model;
 
     /**
      * The single value that should be used to represent the resource when being displayed.
@@ -106,33 +87,41 @@ class Permission extends Resource
             return [$key => $key];
         });
 
-        /** @var \Laravel\Nova\Resource $userResource */
-        $userResource = Nova::resourceForModel(getModelForGuard($this->guard_name));
-        /** @var \Laravel\Nova\Resource $roleResource */
-        $roleResource = Nova::resourceForModel($this->registrar->getRoleClass());
-
-        return [
+        $fields = [
             ID::make()->sortable(),
-
-            Text::make(ucfirst(trans('validation.attributes.name')), 'name')
-                ->rules('required', 'sring', 'max:255')
+            Text::make($this->getTranslatedFieldName('Name'), 'name')
+                ->rules('required', 'string', 'max:255')
                 ->creationRules('unique:'.config('permission.table_names.permissions'))
                 ->updateRules('unique:'.config('permission.table_names.permissions').',name,{{resourceId}}'),
-
-            Select::make(ucfirst(trans('validation.attributes.guard_name')), 'guard_name')
+            Select::make($this->getTranslatedFieldName('Guard name'), 'guard_name')
                 ->options($guardOptions->toArray())
                 ->rules(['required', Rule::in($guardOptions)]),
-
-            DateTime::make(ucfirst(trans('validation.attributes.created_at')), 'created_at')->exceptOnForms(),
-            DateTime::make(ucfirst(trans('validation.attributes.updated_at')), 'updated_at')->exceptOnForms(),
-
-            BelongsToMany::make($roleResource::label(), 'roles', $roleResource)
-                ->searchable()
-                ->singularLabel($roleResource::singularLabel()),
-
-            MorphToMany::make($userResource::label(), 'users', $userResource)
-                ->searchable()
-                ->singularLabel($userResource::singularLabel()),
         ];
+
+        $authorizableResources = config('nova-permission.authorizable_resources', []);
+
+        if (!empty($authorizableResources)) {
+            $fields[] = MorphTo::make($this->getTranslatedFieldName('Authorizable resource'), 'authorizable')
+                ->types($authorizableResources)
+                ->searchable()
+                ->nullable();
+        }
+
+        foreach (['Created at', 'Updated at'] as $fieldName) {
+            $field = DateTime::make($this->getTranslatedFieldName($fieldName), Str::snake($fieldName))
+                ->onlyOnDetail();
+
+            if (is_callable(static::$dateDisplayCallback)) {
+                $field->displayUsing(static::$dateDisplayCallback);
+            }
+
+            $fields[] = $field;
+        }
+
+        $fields[] = BelongsToMany::make(Role::label(), 'roles', Role::class)
+            ->searchable()
+            ->singularLabel(Role::singularLabel());
+
+        return $fields;
     }
 }

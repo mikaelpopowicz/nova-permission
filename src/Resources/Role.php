@@ -2,44 +2,44 @@
 
 namespace Mikaelpopowicz\NovaPermission\Resources;
 
+use Cake\Chronos\Date;
+use Illuminate\Support\Str;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Resource;
 use Laravel\Nova\Fields\ID;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Text;
+use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\DateTime;
 use Laravel\Nova\Fields\MorphToMany;
 use Laravel\Nova\Fields\BelongsToMany;
 use Spatie\Permission\PermissionRegistrar;
-use Mikaelpopowicz\NovaPermission\Models\Permission as PermissionModel;
+use Spatie\Permission\Models\Role as RoleModel;
+use Mikaelpopowicz\NovaPermission\Traits\HasFieldName;
 use Mikaelpopowicz\NovaPermission\Contracts\HasAuthorizable as HasAuthorizableContract;
 
 class Role extends Resource
 {
+    use HasFieldName;
+
+    public static $dateDisplayCallback = null;
+
     /**
      * The model the resource corresponds to.
      *
      * @var string
      */
-    public static $model = PermissionModel::class;
-
-    /** @var \Spatie\Permission\PermissionRegistrar */
-    protected $registrar;
+    public static $model;
 
     /**
-     * Permission constructor.
+     * Set a callback that should be used to set the date field displayUsing.
      *
-     * @param $resource
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @param \Closure $callback
      */
-    public function __construct($resource, PermissionRegistrar $registrar)
+    public static function dateDisplayUsing($callback)
     {
-        parent::__construct($resource);
-
-        $this->registrar = $registrar;
-
-        static::$model = get_class($this->registrar->getRoleClass());
+        static::$dateDisplayCallback = $callback;
     }
 
     /**
@@ -100,33 +100,32 @@ class Role extends Resource
             return [$key => $key];
         });
 
-        /** @var \Laravel\Nova\Resource $userResource */
-        $userResource = Nova::resourceForModel(getModelForGuard($this->guard_name));
-        /** @var \Laravel\Nova\Resource $permissionResource */
-        $permissionResource = Nova::resourceForModel($this->registrar->getPermissionClass());
-
-        return [
+        $fields = [
             ID::make()->sortable(),
-
-            Text::make(ucfirst(trans('validation.attributes.name')), 'name')
-                ->rules('required', 'sring', 'max:255')
+            Text::make($this->getTranslatedFieldName('Name'), 'name')
+                ->rules('required', 'string', 'max:255')
                 ->creationRules('unique:'.config('permission.table_names.roles'))
                 ->updateRules('unique:'.config('permission.table_names.roles').',name,{{resourceId}}'),
-
-            Select::make(ucfirst(trans('validation.attributes.guard_name')), 'guard_name')
+            Select::make($this->getTranslatedFieldName('Guard name'), 'guard_name')
                 ->options($guardOptions->toArray())
                 ->rules(['required', Rule::in($guardOptions)]),
-
-            DateTime::make(ucfirst(trans('validation.attributes.created_at')), 'created_at')->exceptOnForms(),
-            DateTime::make(ucfirst(trans('validation.attributes.updated_at')), 'updated_at')->exceptOnForms(),
-
-            BelongsToMany::make($permissionResource::label(), 'permissions', $permissionResource)
-                ->searchable()
-                ->singularLabel($permissionResource::singularLabel()),
-
-            MorphToMany::make($userResource::label(), 'users', $userResource)
-                ->searchable()
-                ->singularLabel($userResource::singularLabel()),
         ];
+
+        foreach (['Created at', 'Updated at'] as $fieldName) {
+            $field = DateTime::make($this->getTranslatedFieldName($fieldName), Str::snake($fieldName))
+                ->onlyOnDetail();
+
+            if (is_callable(static::$dateDisplayCallback)) {
+                $field->displayUsing(static::$dateDisplayCallback);
+            }
+
+            $fields[] = $field;
+        }
+
+        $fields[] = BelongsToMany::make(Permission::label(), 'permissions', Permission::class)
+            ->searchable()
+            ->singularLabel(Permission::singularLabel());
+
+        return $fields;
     }
 }

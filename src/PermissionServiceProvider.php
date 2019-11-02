@@ -8,6 +8,9 @@ use Laravel\Nova\Events\ServingNova;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\PermissionRegistrar;
+use Mikaelpopowicz\NovaPermission\Resources\Role;
+use Mikaelpopowicz\NovaPermission\Resources\Permission;
 use Mikaelpopowicz\NovaPermission\Http\Middleware\Authorize;
 
 class PermissionServiceProvider extends ServiceProvider
@@ -17,21 +20,44 @@ class PermissionServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot(Filesystem $filesystem)
+    public function boot(Filesystem $filesystem, PermissionRegistrar $registrar)
     {
+        $this->publishes([
+            __DIR__.'/../config/nova-permission.php' => config_path('nova-permission.php')
+        ], 'config');
+
+        $this->publishes([
+            __DIR__.'/../database/migrations/add_authorizable_to_permission_table.php.stub' => $this->getMigrationFileName($filesystem),
+        ], 'migrations');
+
+        $this->publishes([
+            __DIR__.'/../resources/lang' => resource_path('lang/vendor/nova-permission'),
+        ], 'translations');
+
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'nova-permission');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'nova-permission');
 
         $this->app->booted(function () {
             $this->routes();
         });
 
-        Nova::serving(function (ServingNova $event) {
-            //
-        });
+        $this->addResources();
 
-        $this->publishes([
-            __DIR__.'/../database/migrations/add_authorizable_to_permission_table.php.stub' => $this->getMigrationFileName($filesystem),
-        ], 'migrations');
+        Nova::serving(function (ServingNova $event) {
+
+        });
+    }
+
+    protected function addResources()
+    {
+        Permission::$model = get_class($registrar->getPermissionClass());
+        Role::$model = get_class($registrar->getRoleClass());
+
+        Nova::resources([
+            Resources\Permission::class,
+            Resources\Role::class,
+        ]);
     }
 
     /**
@@ -57,7 +83,7 @@ class PermissionServiceProvider extends ServiceProvider
      */
     public function register()
     {
-
+        $this->mergeConfigFrom(__DIR__.'/../config/nova-permission.php', 'nova-permission');
     }
 
     /**
