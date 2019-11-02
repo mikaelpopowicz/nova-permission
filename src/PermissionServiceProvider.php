@@ -42,14 +42,14 @@ class PermissionServiceProvider extends ServiceProvider
             $this->routes();
         });
 
-        $this->addResources();
+        $this->addResources($registrar);
 
         Nova::serving(function (ServingNova $event) {
 
         });
     }
 
-    protected function addResources()
+    protected function addResources(PermissionRegistrar $registrar)
     {
         Permission::$model = get_class($registrar->getPermissionClass());
         Role::$model = get_class($registrar->getRoleClass());

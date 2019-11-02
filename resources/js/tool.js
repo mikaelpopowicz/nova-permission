@@ -1,8 +1,8 @@
 Nova.booting((Vue, router, store) => {
   router.addRoutes([
     {
-      name: 'test',
-      path: '/test',
+      name: 'permission-builder',
+      path: '/permission-builder',
       component: require('./components/Tool'),
     },
   ])
