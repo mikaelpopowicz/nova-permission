@@ -169,7 +169,7 @@ exports = module.exports = __webpack_require__(5)(false);
 
 
 // module
-exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n/* Scoped Styles */\n", ""]);
+exports.push([module.i, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n/* Scoped Styles */\n", ""]);
 
 // exports
 
@@ -632,6 +632,24 @@ module.exports = function normalizeComponent (
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__api__ = __webpack_require__(15);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -668,9 +686,79 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 
+
 /* harmony default export */ __webpack_exports__["default"] = ({
+    data: function data() {
+        return {
+            config: Nova.config.PermissionBuilder || {},
+            loading: false,
+            roles: [],
+            groups: [],
+            loaders: {}
+        };
+    },
     mounted: function mounted() {
-        //
+        var _this = this;
+
+        this.loading = true;
+        this.fetchData().finally(function () {
+            return _this.loading = false;
+        });
+    },
+
+    computed: {
+        rolesChecked: function rolesChecked() {
+            var checked = {};
+
+            console.log(this.groups.values());
+            _.each(this.roles, function (role) {});
+
+            return checked;
+        },
+        groupsRolesChecked: function groupsRolesChecked() {
+            var _this2 = this;
+
+            var checked = {};
+
+            _.each(this.groups, function (permissions, name) {
+                checked[name] = {};
+                _.each(_this2.roles, function (role) {
+                    checked[name][role.id] = permissions.map(function (p) {
+                        return p.roles[role.id];
+                    }).every(function (e) {
+                        return e === true;
+                    });
+                });
+            });
+
+            return checked;
+        }
+    },
+    methods: {
+        fetchData: function fetchData() {
+            var _this3 = this;
+
+            return __WEBPACK_IMPORTED_MODULE_0__api__["a" /* default */].getPermissions().then(function (response) {
+                _this3.roles = response.data.roles || [];
+                var loaders = {};
+                var groups = response.data.groups || [];
+                _.each(groups, function (permissions) {
+                    _.each(permissions, function (permission) {
+                        _.each(_this3.roles, function (role) {
+                            if (!loaders.hasOwnProperty(permission.id)) {
+                                loaders[permission.id] = {};
+                            }
+                            loaders[permission.id][role.id] = false;
+                        });
+                    });
+                });
+                _this3.groups = groups;
+                _this3.loaders = loaders;
+            });
+        },
+        snake: function snake(string) {
+            return string.replace(' ', '_').toLowerCase();
+        }
     }
 });
 
@@ -685,61 +773,131 @@ var render = function() {
   return _c(
     "div",
     [
-      _c("heading", { staticClass: "mb-6" }, [_vm._v("Test")]),
+      _c("heading", { staticClass: "mb-6" }, [
+        _vm._v(_vm._s(_vm.__("permission-builder.title")))
+      ]),
       _vm._v(" "),
       _c(
         "card",
-        {
-          staticClass: "bg-90 flex flex-col items-center justify-center",
-          staticStyle: { "min-height": "300px" }
-        },
         [
-          _c(
-            "svg",
-            {
-              staticClass: "spin fill-80 mb-6",
-              attrs: {
-                width: "69",
-                height: "72",
-                viewBox: "0 0 23 24",
-                xmlns: "http://www.w3.org/2000/svg"
-              }
-            },
-            [
-              _c("path", {
-                attrs: {
-                  d:
-                    "M20.12 20.455A12.184 12.184 0 0 1 11.5 24a12.18 12.18 0 0 1-9.333-4.319c4.772 3.933 11.88 3.687 16.36-.738a7.571 7.571 0 0 0 0-10.8c-3.018-2.982-7.912-2.982-10.931 0a3.245 3.245 0 0 0 0 4.628 3.342 3.342 0 0 0 4.685 0 1.114 1.114 0 0 1 1.561 0 1.082 1.082 0 0 1 0 1.543 5.57 5.57 0 0 1-7.808 0 5.408 5.408 0 0 1 0-7.714c3.881-3.834 10.174-3.834 14.055 0a9.734 9.734 0 0 1 .03 13.855zM4.472 5.057a7.571 7.571 0 0 0 0 10.8c3.018 2.982 7.912 2.982 10.931 0a3.245 3.245 0 0 0 0-4.628 3.342 3.342 0 0 0-4.685 0 1.114 1.114 0 0 1-1.561 0 1.082 1.082 0 0 1 0-1.543 5.57 5.57 0 0 1 7.808 0 5.408 5.408 0 0 1 0 7.714c-3.881 3.834-10.174 3.834-14.055 0a9.734 9.734 0 0 1-.015-13.87C5.096 1.35 8.138 0 11.5 0c3.75 0 7.105 1.68 9.333 4.319C16.06.386 8.953.632 4.473 5.057z",
-                  "fill-rule": "evenodd"
-                }
-              })
-            ]
-          ),
-          _vm._v(" "),
-          _c(
-            "h1",
-            { staticClass: "text-white text-4xl text-90 font-light mb-6" },
-            [_vm._v("\n            We're in a black hole.\n        ")]
-          ),
-          _vm._v(" "),
-          _c("p", { staticClass: "text-white-50% text-lg" }, [
-            _vm._v(
-              "\n            You can edit this tool's component at:\n            "
-            ),
-            _c(
-              "code",
-              {
-                staticClass:
-                  "ml-1 border border-80 text-sm font-mono text-white bg-black rounded px-2 py-1"
-              },
-              [
-                _vm._v(
-                  "\n                /nova-components/Test/resources/js/components/Tool.vue\n            "
+          _c("loading-view", { attrs: { loading: _vm.loading } }, [
+            _vm.roles.length > 0
+              ? _c(
+                  "table",
+                  {
+                    staticClass: "table w-full",
+                    attrs: {
+                      cellpadding: "0",
+                      cellspacing: "0",
+                      "data-testid": "resource-table"
+                    }
+                  },
+                  [
+                    _c("thead", [
+                      _c(
+                        "tr",
+                        [
+                          _c("th", { staticClass: "w-1/6 bg-white" }),
+                          _vm._v(" "),
+                          _vm._l(_vm.roles, function(role) {
+                            return _c(
+                              "th",
+                              { staticClass: "bg-white" },
+                              [
+                                _c("checkbox", {
+                                  staticClass: "py-2 justify-center"
+                                })
+                              ],
+                              1
+                            )
+                          })
+                        ],
+                        2
+                      )
+                    ]),
+                    _vm._v(" "),
+                    _c(
+                      "tbody",
+                      [
+                        _vm._l(_vm.groups, function(permissions, name) {
+                          return [
+                            _c(
+                              "tr",
+                              [
+                                _c(
+                                  "th",
+                                  {
+                                    staticClass:
+                                      "text-left text-primary w-1/6 border-b-0"
+                                  },
+                                  [_vm._v(_vm._s(name))]
+                                ),
+                                _vm._v(" "),
+                                _vm._l(_vm.roles, function(role) {
+                                  return _c(
+                                    "th",
+                                    { staticClass: "border-b-0" },
+                                    [
+                                      _c("p", [_vm._v(_vm._s(role.name))]),
+                                      _vm._v(" "),
+                                      _c("checkbox", {
+                                        staticClass: "py-2 justify-center mt-2",
+                                        attrs: {
+                                          checked:
+                                            _vm.groupsRolesChecked[name][
+                                              role.id
+                                            ]
+                                        }
+                                      })
+                                    ],
+                                    1
+                                  )
+                                })
+                              ],
+                              2
+                            ),
+                            _vm._v(" "),
+                            _vm._l(permissions, function(permission) {
+                              return _c(
+                                "tr",
+                                [
+                                  _c("td", { staticClass: "w-1/6" }, [
+                                    _vm._v(_vm._s(permission.name) + " "),
+                                    _c("small", [
+                                      _vm._v(_vm._s(permission.guard))
+                                    ])
+                                  ]),
+                                  _vm._v(" "),
+                                  _vm._l(_vm.roles, function(role) {
+                                    return _c(
+                                      "td",
+                                      { staticClass: "text-center" },
+                                      [
+                                        _c("checkbox", {
+                                          staticClass: "py-2 justify-center",
+                                          attrs: {
+                                            checked: permission.roles[role.id]
+                                          }
+                                        })
+                                      ],
+                                      1
+                                    )
+                                  })
+                                ],
+                                2
+                              )
+                            })
+                          ]
+                        })
+                      ],
+                      2
+                    )
+                  ]
                 )
-              ]
-            )
+              : _vm._e()
           ])
-        ]
+        ],
+        1
       )
     ],
     1
@@ -760,6 +918,22 @@ if (false) {
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
+
+/***/ }),
+/* 12 */,
+/* 13 */,
+/* 14 */,
+/* 15 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var baseUrl = '/nova-vendor/nova-permission';
+
+/* harmony default export */ __webpack_exports__["a"] = ({
+    getPermissions: function getPermissions() {
+        return Nova.request().get(baseUrl + '/permissions');
+    }
+});
 
 /***/ })
 /******/ ]);

@@ -47,6 +47,14 @@ class PermissionServiceProvider extends ServiceProvider
         Nova::serving(function (ServingNova $event) {
 
         });
+
+        Nova::translations(
+            collect(trans('nova-permission::permission-builder'))
+                ->mapWithKeys(function ($value, $key) {
+                    return ["permission-builder.{$key}" => $value];
+                })
+                ->toArray()
+        );
     }
 
     protected function addResources(PermissionRegistrar $registrar)
@@ -72,6 +80,7 @@ class PermissionServiceProvider extends ServiceProvider
         }
 
         Route::middleware(['nova', Authorize::class])
+            ->namespace('Mikaelpopowicz\NovaPermission\Http\Controllers')
             ->prefix('nova-vendor/nova-permission')
             ->group(__DIR__.'/../routes/api.php');
     }
